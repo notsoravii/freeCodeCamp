@@ -35,6 +35,7 @@ import type {
   Test
 } from '../../../redux/prop-types';
 import { editorToneOptions } from '../../../utils/tone/editor-config';
+import { registerCopyActions } from './editor-copy-actions';
 import { editorNotes } from '../../../utils/tone/editor-notes';
 import { challengeTypes } from '@freecodecamp/shared/config/challenge-types';
 import {
@@ -693,24 +694,7 @@ const Editor = (props: EditorProps): JSX.Element => {
       ],
       run: toggleAriaRoledescription
     });
-    editor.addAction({
-      id: 'select-all-and-copy',
-      label: 'Select All and Copy',
-      contextMenuGroupId: '9_cutcopypaste',
-      contextMenuOrder: 3,
-      run: () => {
-        const fullSelection = editor.getModel()?.getFullModelRange();
-        if (fullSelection) {
-          editor.setSelection(fullSelection);
-          const data = editor.getModel()?.getValueInRange(fullSelection);
-          if (data) {
-            navigator.clipboard
-              .writeText(data)
-              .catch(err => console.error(err));
-          }
-        }
-      }
-    });
+    registerCopyActions(editor, monaco);
     editor.onDidFocusEditorWidget(() => props.setEditorFocusability(true));
 
     // aria-roledescription is on (true) by default, check if it needs
