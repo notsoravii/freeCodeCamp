@@ -1,14 +1,24 @@
 import React from 'react';
 import Loadable from '@loadable/component';
+import { useTranslation } from 'react-i18next';
+import store from 'store';
 import type * as monacoEditor from 'monaco-editor/esm/vs/editor/editor.api.js';
 import { useActiveCode, useSandpack } from '@codesandbox/sandpack-react';
+import {
+  getEditorA11yLabel,
+  registerAccessibilityToggleAction,
+  syncEditorAccessibilityMode
+} from '../utils/monaco-a11y';
 import './custom-monaco-editor.css';
 
 const MonacoEditor = Loadable(() => import('react-monaco-editor'));
 
 const CustomMonacoEditor = () => {
+  const { t } = useTranslation();
   const { code, updateCode } = useActiveCode();
   const { sandpack } = useSandpack();
+  const editorName = sandpack.activeFile.replace(/^\//, '');
+  const initialAccessibilityMode = Boolean(store.get('accessibilityMode'));
 
   const getLanguage = (filePath: string): string => {
     const extension = filePath.split('.').pop();
@@ -72,6 +82,19 @@ const CustomMonacoEditor = () => {
     monaco.editor.defineTheme('fcc-dark', FCC_DARK_CUSTOM);
   };
 
+  const handleEditorDidMount = (
+    editorInstance: monacoEditor.editor.IStandaloneCodeEditor,
+    monaco: typeof monacoEditor
+  ) => {
+    syncEditorAccessibilityMode(editorInstance, t, editorName);
+    registerAccessibilityToggleAction(
+      editorInstance,
+      monaco,
+      t,
+      () => editorName
+    );
+  };
+
   return (
     <div className='monaco-editor-wrapper'>
       <MonacoEditor
@@ -80,6 +103,7 @@ const CustomMonacoEditor = () => {
         language={getLanguage(sandpack.activeFile)}
         theme='fcc-dark'
         editorWillMount={handleEditor}
+        editorDidMount={handleEditorDidMount}
         key={sandpack.activeFile}
         defaultValue={code}
         onChange={value => {
@@ -89,7 +113,10 @@ const CustomMonacoEditor = () => {
           lineNumbersMinChars: 2,
           minimap: { enabled: false },
           scrollBeyondLastLine: false,
-          automaticLayout: true
+          automaticLayout: true,
+          editContext: false,
+          accessibilitySupport: initialAccessibilityMode ? 'on' : 'auto',
+          ariaLabel: getEditorA11yLabel(t, editorName, initialAccessibilityMode)
         }}
       />
     </div>
