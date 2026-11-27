@@ -64,7 +64,7 @@ import {
   isChallengeCompletedSelector
 } from '../redux/selectors';
 import { savedChallengesSelector } from '../../../redux/selectors';
-import { getGuideUrl } from '../utils';
+import { getChallengePageTitle, getGuideUrl } from '../utils';
 import { preloadPage } from '../../../../utils/gatsby/page-loading';
 import envData from '../../../../config/env.json';
 import { getChallengePaths } from '../utils/challenge-paths';
@@ -246,9 +246,11 @@ function ShowClassic({
 
   const guideUrl = getGuideUrl({ forumTopicId, title, block, superBlock });
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )}: ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title,
+    ': '
+  );
   const windowTitle = `${blockNameTitle} | freeCodeCamp.org`;
   const openConsole = isJavaScriptChallenge({ challengeType });
   const hasPreview = challengeHasPreview({ challengeType });

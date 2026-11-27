@@ -32,6 +32,7 @@ import {
   updateSolutionFormValues,
   initTests
 } from '../redux/actions';
+import { getChallengePageTitle } from '../utils';
 import { isChallengeCompletedSelector } from '../redux/selectors';
 import { createFlashMessage } from '../../../components/Flash/redux';
 import {
@@ -146,9 +147,11 @@ function ShowFreeCodeCampOs({
       }
     }
   } = data;
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )}: ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title,
+    ': '
+  );
   const windowTitle = `${blockNameTitle} | freeCodeCamp.org`;
 
   const isPartiallyCompleted = partiallyCompletedChallenges.some(

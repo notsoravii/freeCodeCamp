@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import i18n from '../../../../i18n/config-for-tests';
 import envData from '../../../../config/env.json';
-import { getGuideUrl } from './index';
+import { getChallengePageTitle, getGuideUrl } from './index';
 
 vi.unmock('react-i18next');
 
@@ -36,6 +36,31 @@ describe('index', () => {
       expect(value).toEqual(
         `${forumLocation}/search?q=javascript-algorithms-and-data-structures-v8.blocks.learn-basic-javascript-by-building-a-role-playing-game.title%20-%20Step%2019%20in%3Atitle%20order%3Aviews`
       );
+    });
+  });
+
+  describe('getChallengePageTitle', () => {
+    it('joins distinct block and challenge titles with the separator', () => {
+      expect(getChallengePageTitle('Basic HTML', 'Step 1')).toBe(
+        'Basic HTML - Step 1'
+      );
+      expect(getChallengePageTitle('Basic HTML', 'Step 1', ': ')).toBe(
+        'Basic HTML: Step 1'
+      );
+    });
+
+    it('returns only the challenge title when block title matches challenge title or is empty', () => {
+      expect(
+        getChallengePageTitle('Build a Tribute Page', 'Build a Tribute Page')
+      ).toBe('Build a Tribute Page');
+      expect(
+        getChallengePageTitle(
+          'Foundational C# Certification Exam',
+          'Foundational C# Certification Exam',
+          ': '
+        )
+      ).toBe('Foundational C# Certification Exam');
+      expect(getChallengePageTitle('', 'Step 1')).toBe('Step 1');
     });
   });
 });

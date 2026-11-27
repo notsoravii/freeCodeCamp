@@ -31,6 +31,7 @@ import {
   initTests
 } from '../redux/actions';
 import { isChallengeCompletedSelector } from '../redux/selectors';
+import { getChallengePageTitle } from '../utils';
 import { getChallengePaths } from '../utils/challenge-paths';
 import { getChallengeContentLangProps } from '../../../utils/challenge-content-lang';
 import Scene from '../components/scene/scene';
@@ -150,9 +151,10 @@ const ShowGeneric = ({
   const { t } = useTranslation();
   const container = useRef<HTMLElement | null>(null);
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )} - ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title
+  );
 
   useEffect(() => {
     initTests(tests);
