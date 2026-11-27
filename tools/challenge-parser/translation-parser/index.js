@@ -7,7 +7,14 @@ exports.translateComments = (text, lang, dict, codeLang) => {
   switch (codeLang) {
     case 'js':
     case 'jsx':
+    case 'ts':
+    case 'tsx':
       return transMultiline(transInline(input, config), config);
+    case 'css':
+      return transMultiline(input, config);
+    case 'py':
+    case 'python':
+      return transPython(input, config);
     case 'html':
       return transScript(transHTML(transCSS(input, config), config), config);
     default:
@@ -75,20 +82,49 @@ function transHTML(input, config) {
   return translateGeneric(input, config, '(<!--\\s*)', '(\\s*--!?>)');
 }
 
-function translateGeneric({ text }, config, regexBefore, regexAfter) {
-  const { knownComments, dict, lang } = config;
-  const regex = new RegExp(regexBefore + '(.*?)' + regexAfter, 'gms');
-  const matches = text.matchAll(regex);
+function transPython({ text }, config) {
+  // Match string literals (triple- and single-quoted, with optional prefixes)
+  // before '#' comments so hashes inside strings are preserved unchanged.
+  const regex =
+    /(?:[rRfFbBuU]{0,2})(?:"""(?:\\[\s\S]|[^\\])*?"""|'''(?:\\[\s\S]|[^\\])*?'''|"(?:\\[\s\S]|[^"\\\r\n])*"|'(?:\\[\s\S]|[^'\\\r\n])*')|(#)([ \t]*)([^\r\n]*)/g;
 
-  for (const [match, before, comment, after] of matches) {
-    if (knownComments.includes(comment)) {
-      text = text.replace(match, `${before}${dict[comment][lang]}${after}`);
-    } else if (comment.trim()) {
-      throw `The comment
+  return {
+    text: text.replace(regex, (match, hash, beforeSpaces, rawComment) => {
+      if (!hash) return match;
+      const trailingMatch = rawComment.match(/([ \t]*)$/);
+      const after = trailingMatch ? trailingMatch[1] : '';
+      const comment = rawComment.slice(0, rawComment.length - after.length);
+      const translated = translateComment(comment, config);
+      return translated === null
+        ? match
+        : `${hash}${beforeSpaces}${translated}${after}`;
+    })
+  };
+}
+
+function translateComment(comment, config) {
+  const { knownComments, dict, lang } = config;
+  if (knownComments.includes(comment)) {
+    return dict[comment][lang];
+  }
+  if (comment.trim()) {
+    throw `The comment
 ${comment}
 does not appear in the comment dictionary.
 When updating or adding a comment it must have the same text in the English challenges and the comment dictionary.
 `;
+  }
+  return null;
+}
+
+function translateGeneric({ text }, config, regexBefore, regexAfter) {
+  const regex = new RegExp(regexBefore + '(.*?)' + regexAfter, 'gms');
+  const matches = text.matchAll(regex);
+
+  for (const [match, before, comment, after] of matches) {
+    const translated = translateComment(comment, config);
+    if (translated !== null) {
+      text = text.replace(match, `${before}${translated}${after}`);
     }
   }
 
