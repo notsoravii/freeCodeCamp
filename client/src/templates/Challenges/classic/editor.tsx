@@ -35,6 +35,11 @@ import type {
   Test
 } from '../../../redux/prop-types';
 import { editorToneOptions } from '../../../utils/tone/editor-config';
+import {
+  getEditorA11yLabel,
+  registerAccessibilityToggleAction,
+  syncEditorAccessibilityMode
+} from '../utils/monaco-a11y';
 import { editorNotes } from '../../../utils/tone/editor-notes';
 import { challengeTypes } from '@freecodecamp/shared/config/challenge-types';
 import {
@@ -346,6 +351,7 @@ const Editor = (props: EditorProps): JSX.Element => {
   );
 
   const ariaEditorName = `${challengeFile?.name}.${challengeFile?.ext}`;
+  const initialAccessibilityMode = Boolean(store.get('accessibilityMode'));
 
   const options: editor.IStandaloneEditorConstructionOptions = {
     fontSize: 18,
@@ -355,6 +361,8 @@ const Editor = (props: EditorProps): JSX.Element => {
     overviewRulerBorder: false,
     hideCursorInOverviewRuler: true,
     editContext: false,
+    accessibilitySupport: initialAccessibilityMode ? 'on' : 'auto',
+    ariaLabel: getEditorA11yLabel(t, ariaEditorName, initialAccessibilityMode),
     guides: {
       highlightActiveIndentation:
         props.challengeType === challengeTypes.python ||
@@ -510,33 +518,8 @@ const Editor = (props: EditorProps): JSX.Element => {
       }
     }
 
-    const storedAccessibilityMode = () => {
-      const accessibility = store.get('accessibilityMode') as boolean;
-
-      const isMacOS = navigator.userAgent.includes('Mac OS');
-      const a11yOffText = isMacOS
-        ? t('aria.editor-a11y-off-macos', { editorName: ariaEditorName })
-        : t('aria.editor-a11y-off-non-macos', { editorName: ariaEditorName });
-      const a11yOnText = isMacOS
-        ? t('aria.editor-a11y-on-macos', { editorName: ariaEditorName })
-        : t('aria.editor-a11y-on-non-macos', { editorName: ariaEditorName });
-
-      if (!accessibility) {
-        store.set('accessibilityMode', false);
-
-        editor.updateOptions({
-          ariaLabel: a11yOffText
-        });
-      }
-
-      if (accessibility) {
-        editor.updateOptions({
-          ariaLabel: a11yOnText
-        });
-      }
-
-      return accessibility;
-    };
+    const storedAccessibilityMode = () =>
+      syncEditorAccessibilityMode(editor, t, ariaEditorName);
 
     const setTabTrapped = (
       trapped: boolean,
@@ -666,23 +649,7 @@ const Editor = (props: EditorProps): JSX.Element => {
           : // save to local storage
             props.saveEditorContent()
     });
-    editor.addAction({
-      id: 'toggle-accessibility',
-      label: 'Toggle Accessibility Mode',
-      keybindings: [
-        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE,
-        monaco.KeyMod.WinCtrl | monaco.KeyCode.KeyE
-      ],
-      run: () => {
-        const currentAccessibility = storedAccessibilityMode();
-
-        store.set('accessibilityMode', !currentAccessibility);
-
-        editor.updateOptions({
-          accessibilitySupport: storedAccessibilityMode() ? 'on' : 'auto'
-        });
-      }
-    });
+    registerAccessibilityToggleAction(editor, monaco, t, () => ariaEditorName);
     // Introduced as a work around for a bug in JAWS 2022
     // https://github.com/FreedomScientific/VFO-standards-support/issues/598
     editor.addAction({
