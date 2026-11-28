@@ -36,6 +36,7 @@ import {
 } from '../redux/actions';
 import Scene from '../components/scene/scene';
 import { SceneSubject } from '../components/scene/scene-subject';
+import { getChallengePageTitle } from '../utils';
 import { getChallengePaths } from '../utils/challenge-paths';
 import { isChallengeCompletedSelector } from '../redux/selectors';
 import { replaceAppleQuotes } from '../../../utils/replace-apple-quotes';
@@ -251,9 +252,10 @@ const ShowFillInTheBlank = ({
     sceneSubject.notify('play');
   };
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )} - ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title
+  );
 
   const sceneSubject = new SceneSubject();
 

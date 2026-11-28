@@ -25,6 +25,7 @@ import ChallengeDescription from '../components/challenge-description';
 import Hotkeys from '../components/hotkeys';
 import ChallengeTitle from '../components/challenge-title';
 import CompletionModal from '../components/completion-modal';
+import { getChallengePageTitle } from '../utils';
 import { getChallengePaths } from '../utils/challenge-paths';
 import {
   challengeMounted,
@@ -134,9 +135,10 @@ const ShowQuiz = ({
 
   const [exitPathname, setExitPathname] = useState(blockHashSlug);
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )} - ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title
+  );
 
   const [quizId] = useState(Math.floor(Math.random() * quizzes.length));
   const quiz = quizzes[quizId].questions;

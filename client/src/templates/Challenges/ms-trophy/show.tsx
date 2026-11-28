@@ -15,6 +15,7 @@ import ChallengeDescription from '../components/challenge-description';
 import Hotkeys from '../components/hotkeys';
 import ChallengeTitle from '../components/challenge-title';
 import CompletionModal from '../components/completion-modal';
+import { getChallengePageTitle } from '../utils';
 import { getChallengePaths } from '../utils/challenge-paths';
 import HelpModal from '../components/help-modal';
 import {
@@ -153,9 +154,10 @@ function MsTrophy(props: MsTrophyProps) {
     t
   } = props;
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )} - ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title
+  );
 
   return (
     <Hotkeys containerRef={container}>

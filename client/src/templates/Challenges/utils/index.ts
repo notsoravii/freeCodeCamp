@@ -31,6 +31,16 @@ export function getGuideUrl({
   )}%20in%3Atitle%20order%3Aviews`;
 }
 
+export function getChallengePageTitle(
+  blockTitle: string,
+  challengeTitle: string,
+  separator = ' - '
+): string {
+  return blockTitle && blockTitle !== challengeTitle
+    ? `${blockTitle}${separator}${challengeTitle}`
+    : challengeTitle;
+}
+
 export function isGoodXHRStatus(status?: string): boolean {
   if (!status) return false;
   const statusInt = parseInt(status, 10);

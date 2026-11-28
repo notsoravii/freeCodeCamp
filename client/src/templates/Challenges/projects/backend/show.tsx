@@ -35,7 +35,7 @@ import {
   isChallengeCompletedSelector
 } from '../../redux/selectors';
 
-import { getGuideUrl } from '../../utils';
+import { getChallengePageTitle, getGuideUrl } from '../../utils';
 import { getChallengePaths } from '../../utils/challenge-paths';
 import SolutionForm from '../solution-form';
 import ProjectToolPanel from '../tool-panel';
@@ -160,9 +160,10 @@ const ShowBackEnd = (props: BackEndProps) => {
     updateSolutionFormValues
   } = props;
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )} - ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title
+  );
 
   return (
     <Hotkeys containerRef={container}>

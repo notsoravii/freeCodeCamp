@@ -37,6 +37,7 @@ import {
   updateSolutionFormValues,
   initTests
 } from '../redux/actions';
+import { getChallengePageTitle } from '../utils';
 import { getGenerateExam } from '../../../utils/ajax';
 import { isChallengeCompletedSelector } from '../redux/selectors';
 import { createFlashMessage } from '../../../components/Flash/redux';
@@ -546,9 +547,11 @@ function ShowExam(props: ShowExamProps) {
   const prerequisitesComplete = missingPrerequisites.length === 0;
   const qualifiedForExam = prerequisitesComplete && surveyCompleted;
 
-  const blockNameTitle = `${t(
-    `intro:${superBlock}.blocks.${block}.title`
-  )}: ${title}`;
+  const blockNameTitle = getChallengePageTitle(
+    t(`intro:${superBlock}.blocks.${block}.title`),
+    title,
+    ': '
+  );
   const windowTitle = `${blockNameTitle} | freeCodeCamp.org`;
 
   // TODO: If already taken exam, show different messages
