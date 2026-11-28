@@ -35,7 +35,11 @@ import {
   updateSolutionFormValues,
   initTests
 } from '../redux/actions';
-import { isChallengeCompletedSelector } from '../redux/selectors';
+import {
+  isChallengeCompletedSelector,
+  isCompletionModalOpenSelector,
+  isFinishQuizModalOpenSelector
+} from '../redux/selectors';
 import PrismFormatted from '../components/prism-formatted';
 import { getChallengeContentLangProps } from '../../../utils/challenge-content-lang';
 import { usePageLeave } from '../hooks';
@@ -49,8 +53,16 @@ import './show.css';
 // Redux Setup
 const mapStateToProps = createSelector(
   isChallengeCompletedSelector,
-  (isChallengeCompleted: boolean) => ({
-    isChallengeCompleted
+  isFinishQuizModalOpenSelector,
+  isCompletionModalOpenSelector,
+  (
+    isChallengeCompleted: boolean,
+    isFinishQuizModalOpen: boolean,
+    isCompletionModalOpen: boolean
+  ) => ({
+    isChallengeCompleted,
+    isFinishQuizModalOpen,
+    isCompletionModalOpen
   })
 );
 const mapDispatchToProps = (dispatch: Dispatch) =>
@@ -76,6 +88,8 @@ interface ShowQuizProps {
   description: string;
   initTests: (xs: Test[]) => void;
   isChallengeCompleted: boolean;
+  isCompletionModalOpen: boolean;
+  isFinishQuizModalOpen: boolean;
   pageContext: {
     challengeMeta: ChallengeMeta;
   };
@@ -113,6 +127,8 @@ const ShowQuiz = ({
   initTests,
   updateChallengeMeta,
   isChallengeCompleted,
+  isCompletionModalOpen,
+  isFinishQuizModalOpen,
   openCompletionModal,
   openExitQuizModal,
   closeExitQuizModal,
@@ -121,6 +137,7 @@ const ShowQuiz = ({
 }: ShowQuizProps) => {
   const { t } = useTranslation();
   const container = useRef<HTMLElement | null>(null);
+  const scoreMessageRef = useRef<HTMLDivElement | null>(null);
 
   // Campers are not allowed to change their answers once the quiz is submitted.
   // `hasSubmitted` is used as a flag to disable the quiz.
@@ -130,6 +147,8 @@ const ShowQuiz = ({
   const [isPassed, setIsPassed] = useState(false);
 
   const [showUnanswered, setShowUnanswered] = useState(false);
+  const [scoreAnnouncementReady, setScoreAnnouncementReady] = useState(false);
+  const [completionScoreText, setCompletionScoreText] = useState('');
 
   const exitConfirmed = useRef(false);
 
@@ -320,6 +339,67 @@ const ShowQuiz = ({
     onHistoryChange
   });
 
+  useEffect(() => {
+    if (!validated || isPassed || isFinishQuizModalOpen) {
+      setScoreAnnouncementReady(false);
+      return;
+    }
+
+    const announceFailScore = () => {
+      setScoreAnnouncementReady(true);
+      requestAnimationFrame(() => scoreMessageRef.current?.focus());
+    };
+
+    if (!document.querySelector('[role="dialog"]')) {
+      announceFailScore();
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      if (!document.querySelector('[role="dialog"]')) {
+        observer.disconnect();
+        window.clearTimeout(fallbackTimer);
+        announceFailScore();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+
+    const fallbackTimer = window.setTimeout(() => {
+      observer.disconnect();
+      announceFailScore();
+    }, 400);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [validated, isPassed, isFinishQuizModalOpen]);
+
+  useEffect(() => {
+    if (!validated || !isPassed || !isCompletionModalOpen) {
+      setCompletionScoreText('');
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCompletionScoreText(
+        t('learn.quiz.have-n-correct-questions', {
+          correctAnswerCount,
+          total: quiz.length
+        })
+      );
+    }, 50);
+
+    return () => window.clearTimeout(timer);
+  }, [
+    validated,
+    isPassed,
+    isCompletionModalOpen,
+    correctAnswerCount,
+    quiz.length,
+    t
+  ]);
+
   function getErrorMessage() {
     if (showUnanswered && unanswered.length > 0) {
       return t('learn.quiz.unanswered-questions', {
@@ -327,7 +407,7 @@ const ShowQuiz = ({
       });
     }
 
-    if (validated) {
+    if (validated && (isPassed || scoreAnnouncementReady)) {
       // TODO: Update the message to include link(s) to the review materials
       // if campers didn't pass the quiz.
       return t('learn.quiz.have-n-correct-questions', {
@@ -373,7 +453,12 @@ const ShowQuiz = ({
                 <Quiz questions={quizData} disabled={hasSubmitted} />
               </ObserveKeys>
               <Spacer size='m' />
-              <div aria-live='polite' aria-atomic='true'>
+              <div
+                ref={scoreMessageRef}
+                tabIndex={-1}
+                aria-live='polite'
+                aria-atomic='true'
+              >
                 {errorMessage}
               </div>
               <Spacer size='m' />
@@ -403,7 +488,18 @@ const ShowQuiz = ({
             </Col>
           </Row>
         </Container>
-        <CompletionModal />
+        <CompletionModal>
+          {validated && isPassed ? (
+            <p
+              className='quiz-completion-score'
+              role='status'
+              aria-live='polite'
+              aria-atomic='true'
+            >
+              {completionScoreText}
+            </p>
+          ) : null}
+        </CompletionModal>
         <ExitQuizModal onExit={handleExitQuizModalBtnClick} />
         <FinishQuizModal onFinish={handleFinishQuizModalBtnClick} />
         <MobileAppModal superBlock={superBlock} />
